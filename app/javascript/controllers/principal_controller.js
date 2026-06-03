@@ -36,8 +36,12 @@ export default class extends Controller {
 
     this.envTitleTarget.textContent = this.envNameValue
 
-    // Legacy globalService.company → refrescar logo/encabezado al cambiar compañía
-    this.companyChangedHandler = () => this.refreshHeaderInfo()
+    // Legacy: globalService.company → refresca logo/encabezado, y
+    // globalService.MenuItem (SetOptionMenu al cerrar SelectCompany) → re-infla el menú
+    this.companyChangedHandler = () => {
+      this.renderMenu()
+      this.refreshHeaderInfo()
+    }
     window.addEventListener("pms:company-changed", this.companyChangedHandler)
 
     this.renderMenu()

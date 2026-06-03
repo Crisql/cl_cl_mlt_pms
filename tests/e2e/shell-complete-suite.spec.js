@@ -232,6 +232,56 @@ test.describe('Shell - Header', () => {
   });
 });
 
+test.describe('Shell - Menú tras seleccionar compañía', () => {
+  test('Entrar sin KeyMenu → seleccionar compañía → el sidebar se re-renderiza con el menú', async ({ page }) => {
+    // Sesión SIN compañía y SIN KeyMenu (primer ingreso real)
+    await page.addInitScript((session) => {
+      localStorage.setItem('CurrentSession', btoa(JSON.stringify(session)));
+    }, FAKE_SESSION);
+
+    await page.route('**/api/Company/GetCompaniesByUser', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ Data: [COMPANY] }) })
+    );
+    await page.route('**/api/UsersByCompany/GetPermissionsRoles', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ Data: { Permissions: [], Roles: [] } }) })
+    );
+    await page.route('**/api/Users/GetLoggedUser', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ Data: { MainCurrency: 'CRC', TaxIdNum: '', ListConfHTH: [], SapUser: '' } }) })
+    );
+    await page.route('**/api/Menu', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ Data: KEY_MENU.filter((m) => m.Key !== 'logout') }) })
+    );
+    await page.route('**/api/Chart', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ Data: [], Message: '' }) })
+    );
+    await page.route('**/api/Setting/GetSettingByKey**', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ Data: { Json: '[]' } }) })
+    );
+    await page.route('**/api/Bank/GetExchangeRateFromBccr', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ Data: 0 }) })
+    );
+
+    await page.goto('/Home');
+
+    // Sin compañía: sidebar sin opciones y modal abierto
+    const nav = page.locator('[data-principal-target="menuContainer"]');
+    await expect(nav.getByText('Sin opciones de menú')).toBeVisible();
+    const modal = page.locator('[data-controller="select-company"]');
+    await expect(modal).toBeVisible();
+
+    // Seleccionar compañía
+    const row = modal.locator('tbody tr', { hasText: 'Clavisco CR' });
+    await row.locator('[data-role="select-company-row"]').click();
+    await expect(modal).toBeHidden({ timeout: 10000 });
+
+    // El sidebar se re-renderiza con el menú del API + opción Cerrar Sesión
+    await expect(nav.getByText('Inicio')).toBeVisible();
+    await expect(nav.getByText('Configuración')).toBeVisible();
+    await expect(nav.getByText('Cerrar Sesión')).toBeVisible();
+    await expect(nav.getByText('Sin opciones de menú')).toHaveCount(0);
+  });
+});
+
 test.describe('Shell - Post-login (LoadSettings)', () => {
   test('Carga BankAccountsValidFormats y AutoBatchProcessor → sessionStorage', async ({ page }) => {
     const captured = await setupShell(page);
