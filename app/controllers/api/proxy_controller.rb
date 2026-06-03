@@ -85,7 +85,9 @@ module Api
     private
 
     def legacy_api_base_url
-      ENV.fetch("LEGACY_API_URL", "https://clpmsapi.clavisco.com")
+      # Default: ambiente temporal de clv para desarrollo/migración.
+      # Producción se configura explícitamente vía ENV (https://clpmsapi.clavisco.com).
+      ENV.fetch("LEGACY_API_URL", "https://clpmsapitmp.clavisco.com")
     end
 
     # Rebuild a generic multipart body from the parsed form params
