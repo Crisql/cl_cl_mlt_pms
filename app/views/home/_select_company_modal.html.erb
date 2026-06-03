@@ -1,0 +1,90 @@
+<%# SelectCompany — réplica del modal SelectCompanyComponent (Angular PMS) %>
+<%# Análisis: docs/migration/comparisons/SELECTCOMPANY-COMPLETE-ANALYSIS.md %>
+<%# disableClose: true → sin botón X, no se cierra con ESC/click fuera %>
+<div data-controller="select-company"
+     data-select-company-target="modal"
+     class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+  <div class="bg-white rounded-lg shadow-xl flex flex-col" style="width: 70%; height: 80%;">
+
+    <%# Header %>
+    <div class="px-6 py-4 border-b">
+      <span class="text-lg font-semibold">Selección de compañía</span>
+    </div>
+
+    <%# Body %>
+    <div class="flex-1 overflow-hidden flex flex-col px-6 py-4">
+      <%# Barra: select de proceso + búsqueda %>
+      <div class="flex items-end justify-between gap-4 mb-4 flex-wrap">
+        <div class="flex items-center gap-2">
+          <label for="sc-search" class="sr-only">Criterio de búsqueda</label>
+          <input type="text" id="sc-search" placeholder="Buscar compañía"
+                 data-select-company-target="searchInput"
+                 data-action="input->select-company#onSearchInput"
+                 class="border border-gray-300 rounded px-3 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <button type="button" title="Buscar compañía"
+                  data-action="click->select-company#onSearchClick"
+                  class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded">🔍</button>
+        </div>
+        <div>
+          <label for="sc-process" class="block text-sm text-gray-600 mb-1">Seleccione un proceso</label>
+          <select id="sc-process"
+                  data-select-company-target="processSelect"
+                  class="border border-gray-300 rounded px-3 py-2 w-48 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value=""></option>
+          </select>
+        </div>
+      </div>
+
+      <%# Tabla de compañías %>
+      <div class="flex-1 overflow-auto border rounded">
+        <table class="w-full text-sm" id="tb-CompanyTable">
+          <thead class="bg-gray-50 sticky top-0">
+            <tr>
+              <th class="text-left px-4 py-2 font-medium text-gray-700">Nombre de la compañía</th>
+              <th class="text-left px-4 py-2 font-medium text-gray-700">Base de datos</th>
+              <th class="text-left px-4 py-2 font-medium text-gray-700">Procesos configurados</th>
+              <th class="px-4 py-2"></th>
+            </tr>
+          </thead>
+          <tbody data-select-company-target="tableBody"></tbody>
+        </table>
+      </div>
+
+      <%# Paginación local (5/10/15, default 5) %>
+      <div class="flex items-center justify-end gap-4 mt-3 text-sm text-gray-600" id="CompanyTable-paginator">
+        <label>
+          Items por página
+          <select data-select-company-target="pageSize"
+                  data-action="change->select-company#onPageSizeChange"
+                  class="border border-gray-300 rounded px-2 py-1 ml-1">
+            <option value="5" selected>5</option>
+            <option value="10">10</option>
+            <option value="15">15</option>
+          </select>
+        </label>
+        <span data-select-company-target="pageInfo"></span>
+        <button type="button" data-select-company-target="prevPage"
+                data-action="click->select-company#previousPage"
+                class="px-2 py-1 border rounded disabled:opacity-40">‹</button>
+        <button type="button" data-select-company-target="nextPage"
+                data-action="click->select-company#nextPage"
+                class="px-2 py-1 border rounded disabled:opacity-40">›</button>
+      </div>
+    </div>
+
+    <%# Footer %>
+    <div class="px-6 py-4 border-t flex justify-end gap-3">
+      <button type="button" hidden
+              data-select-company-target="cancelButton"
+              data-action="click->select-company#cancel"
+              class="px-4 py-2 border border-blue-600 text-blue-600 rounded hover:bg-blue-50">
+        ✕ Cancelar
+      </button>
+      <button type="button"
+              data-action="click->select-company#logout"
+              class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+        Cerrar Sesión
+      </button>
+    </div>
+  </div>
+</div>

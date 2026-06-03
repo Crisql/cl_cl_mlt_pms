@@ -13,6 +13,8 @@ Rails.application.routes.draw do
   get "Login", to: "sessions#new", as: :login
   get "Home", to: "home#index", as: :home
   get "Home/:UserId", to: "home#index"
+  # Legacy: ruta /SelectCompany existe como página; renderiza Home con el modal
+  get "SelectCompany", to: "home#index"
 
   # Legacy Angular: path '' → redirectTo '/Home'
   root to: redirect("/Home")

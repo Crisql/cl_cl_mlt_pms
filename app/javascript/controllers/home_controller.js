@@ -13,10 +13,18 @@ import { logout } from "lib/guards"
  */
 export default class extends Controller {
   static targets = ["currentDate"]
+  static values = {
+    // true cuando se entra por la ruta /SelectCompany (página legacy)
+    forceSelectCompany: { type: Boolean, default: false }
+  }
 
   connect() {
     this.validateSession()
     this.renderCurrentDate()
+
+    if (this.forceSelectCompanyValue && isAuthenticated()) {
+      this.openSelectCompanyModal()
+    }
   }
 
   validateSession() {
@@ -29,10 +37,24 @@ export default class extends Controller {
     }
 
     if (!haveSelectedCompany() && isAuthenticated()) {
-      // TODO(migrate SelectCompany): abrir el modal SelectCompanyComponent
-      // (dialog.open(SelectCompanyComponent, { disableClose: true, ... }))
-      console.warn("[Home] SelectCompany modal pendiente de migración (migrate SelectCompany)")
+      // Legacy: dialog.open(SelectCompanyComponent, { disableClose: true, ... })
+      this.openSelectCompanyModal()
     }
+  }
+
+  openSelectCompanyModal() {
+    const modalElement = document.querySelector('[data-controller~="select-company"]')
+    if (!modalElement) return
+
+    // Esperar a que Stimulus conecte el controller del modal
+    requestAnimationFrame(() => {
+      const controller = this.application.getControllerForElementAndIdentifier(modalElement, "select-company")
+      if (controller) {
+        controller.open()
+      } else {
+        setTimeout(() => this.openSelectCompanyModal(), 50)
+      }
+    })
   }
 
   renderCurrentDate() {

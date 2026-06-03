@@ -6,9 +6,9 @@ test.describe('Setup inicial - Smoke', () => {
   test('La página de Login carga con sus campos', async ({ page }) => {
     await page.goto('/Login');
 
-    await expect(page.locator('#username')).toBeVisible();
-    await expect(page.locator('#password')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Iniciar sesión' })).toBeVisible();
+    await expect(page.locator('#loginUser')).toBeVisible();
+    await expect(page.locator('#loginPass')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Ingresar' })).toBeVisible();
   });
 
   test('Home sin sesión redirige a /Login (réplica de ValidateSession)', async ({ page }) => {
