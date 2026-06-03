@@ -1,39 +1,121 @@
 import { Controller } from "@hotwired/stimulus"
-import { setSession } from "lib/api_helpers"
-import { getError } from "vendor/clavisco/core"
-import { error as toastError } from "vendor/clavisco/alerts"
+import { setSession, decodeResponseMessage } from "lib/api_helpers"
+import { getError, isValidEmail } from "vendor/clavisco/core"
+import { error as toastError, showAlert } from "vendor/clavisco/alerts"
 import { showLoading, hideLoading } from "vendor/clavisco/overlay"
 
+// Configuración legacy del PMS (app.component SetTokenConfiguration LOGN)
+const ENDPOINTS = {
+  token: "/api/token",
+  changePassword: "/api/Users/ChangePassword",
+  recoverPassword: "/api/Users/ChangeRecoverPassword",
+  sendRecoverPasswordEmail: (email) => `/api/Users/RecoverPassword/${email}`
+}
+
+const OVERLAY_MESSAGES = {
+  login: "Iniciando Sesión",
+  changePassword: "Cambiando Contraseña",
+  sendRecoverEmail: "Enviando Correo de Recuperación",
+  recoverPassword: "Actualizando Contraseña"
+}
+
+const MIN_PASSWORD_LENGTH = 8 // EnforcePasswordPolicy=true (default del cl-login)
+
 /**
- * Login controller — replica del flujo CORE de @clavisco/login usado por el
- * Angular PMS (LoginContainerComponent):
+ * Login controller — réplica del cl-login (CORE) usado por el Angular PMS.
+ * Análisis completo: docs/migration/comparisons/LOGIN-COMPLETE-ANALYSIS.md
  *
- *   1. Al entrar a /Login se limpia el storage (StorageService.CleanStorage()).
- *   2. Submit → reCAPTCHA v3 execute("Login") cuando hay site key.
- *   3. POST /api/token con body JSON { UserName, Password } y headers
- *      Content-Type: application/json + Cl-Recaptcha-Token.
- *   4. Éxito (callback.access_token) → guardar respuesta COMPLETA como
- *      base64(JSON) en localStorage "CurrentSession" y navegar a
- *      redirectURL || /Home.
- *   5. Error → toast con GetError(error).
+ * 4 vistas conmutadas (login / recover-email / change-password / recover-password),
+ * mismas validaciones, mensajes, endpoints y storage que el legacy.
  */
 export default class extends Controller {
-  static targets = ["username", "password", "submitButton"]
+  static targets = [
+    "loginView", "recoverEmailView", "changePasswordView", "recoverPasswordView",
+    "loginUser", "loginPass", "loginPassToggle",
+    "userEmail", "sendRecoverEmailButton",
+    "cpUserEmail", "currentPassword", "newPassword", "confirmPassword",
+    "changePasswordButton", "cpNotEqualError",
+    "rpNewPassword", "rpConfirmPassword", "recoverPasswordButton", "rpNotEqualError"
+  ]
+
   static values = {
     redirect: { type: String, default: "/Home" },
+    recoveryToken: { type: String, default: "" },
     recaptchaSiteKey: { type: String, default: "" }
   }
 
   connect() {
-    // Legacy: LoginContainerComponent.ngOnInit → StorageService.CleanStorage()
-    // NOTA: CleanStorage() del @clavisco/core NO limpia localStorage; solo
-    // resetea la configuración multi-ventana (no aplica en Rails). La limpieza
-    // real de sesión ocurre en logout (AuthenticationService.Logout).
+    // Legacy ReadURLParameters(): query param token → vista recover password
+    if (this.recoveryTokenValue) {
+      this.showView("recoverPassword")
+      history.replaceState(null, "", "/Login#recovery")
+    }
 
     if (this.recaptchaSiteKeyValue) {
       this.loadRecaptcha()
     }
   }
+
+  // ==========================================================
+  // NAVEGACIÓN ENTRE VISTAS (GoToLogin / GoToReplacePassword / GoToChangePassword)
+  // Legacy: replaceState + reset de TODOS los formularios
+  // ==========================================================
+
+  showView(name) {
+    this.loginViewTarget.hidden = name !== "login"
+    this.recoverEmailViewTarget.hidden = name !== "recoverEmail"
+    this.changePasswordViewTarget.hidden = name !== "changePassword"
+    this.recoverPasswordViewTarget.hidden = name !== "recoverPassword"
+  }
+
+  resetForms() {
+    this.element.querySelectorAll("form").forEach((form) => form.reset())
+    this.cpNotEqualErrorTarget.hidden = true
+    this.rpNotEqualErrorTarget.hidden = true
+    this.sendRecoverEmailButtonTarget.disabled = true
+    this.changePasswordButtonTarget.disabled = true
+    this.recoverPasswordButtonTarget.disabled = true
+  }
+
+  goToLogin(event) {
+    event?.preventDefault()
+    history.replaceState(null, "", "/Login#login")
+    this.showView("login")
+    this.resetForms()
+  }
+
+  goToRecoverEmail(event) {
+    event?.preventDefault()
+    history.replaceState(null, "", "/Login#recovery")
+    this.showView("recoverEmail")
+    this.resetForms()
+  }
+
+  goToChangePassword(event) {
+    event?.preventDefault()
+    history.replaceState(null, "", "/Login#change-password")
+    this.showView("changePassword")
+    this.resetForms()
+  }
+
+  // ==========================================================
+  // TOGGLES DE VISIBILIDAD
+  // ==========================================================
+
+  toggleLoginPassword() {
+    const input = this.loginPassTarget
+    input.type = input.type === "password" ? "text" : "password"
+  }
+
+  /** Toggle genérico: alterna el input hermano dentro del mismo contenedor */
+  togglePasswordField(event) {
+    const input = event.currentTarget.parentElement.querySelector("input")
+    if (input) input.type = input.type === "password" ? "text" : "password"
+  }
+
+  // ==========================================================
+  // reCAPTCHA v3 (action "Login")
+  // ==========================================================
 
   loadRecaptcha() {
     if (document.querySelector("script[data-recaptcha]")) return
@@ -44,11 +126,7 @@ export default class extends Controller {
     document.head.appendChild(script)
   }
 
-  /**
-   * Get a reCAPTCHA v3 token for the "Login" action.
-   * Legacy: _useReCaptcha ? recaptchaV3Service.execute("Login") : of("")
-   * @returns {Promise<string>}
-   */
+  /** Legacy: _useReCaptcha ? recaptchaV3Service.execute("Login") : of("") */
   getRecaptchaToken() {
     if (!this.recaptchaSiteKeyValue || !window.grecaptcha) {
       return Promise.resolve("")
@@ -64,25 +142,40 @@ export default class extends Controller {
     })
   }
 
-  async submit(event) {
+  // ==========================================================
+  // VISTA 1: LOGIN
+  // ==========================================================
+
+  async login(event) {
     event.preventDefault()
 
-    const userName = this.usernameTarget.value.trim()
-    const password = this.passwordTarget.value
+    const userName = this.loginUserTarget.value
+    const password = this.loginPassTarget.value
 
+    // Validaciones EXACTAS del legacy Login() (en este orden, como toasts)
     if (!userName || !password) {
-      toastError("Debe ingresar usuario y contraseña")
+      toastError("Por favor complete el formulario antes de enviarlo")
       return
     }
 
-    this.submitButtonTarget.disabled = true
-    showLoading("Iniciando sesión...")
+    if (!isValidEmail(userName)) {
+      toastError("Correo en formato inválido. Sugerencia: micorreo@ejemplo.com")
+      return
+    }
+
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      toastError(`La longitud de la contraseña debe tener ${MIN_PASSWORD_LENGTH} caracteres`)
+      return
+    }
+
+    showLoading(OVERLAY_MESSAGES.login)
 
     try {
       const recaptchaToken = await this.getRecaptchaToken()
 
-      // Legacy CORE flow: POST {ApiUrl}token with JSON body
-      const response = await fetch("/api/token", {
+      // Legacy CORE: POST {ApiUrl}token con body JSON {UserName, Password}.
+      // Sin Authorization (AppInterceptor excluye URLs con 'token').
+      const response = await fetch(ENDPOINTS.token, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -91,21 +184,160 @@ export default class extends Controller {
         body: JSON.stringify({ UserName: userName, Password: password })
       })
 
-      const callback = await response.json().catch(() => null)
+      const callback = decodeResponseMessage(await response.json().catch(() => null))
 
       if (response.ok && callback && callback.access_token) {
-        // Legacy: Repository.Behavior.SetStorage(callback, 'CurrentSession')
+        // Legacy: SetStorage(callback, 'CurrentSession') — objeto COMPLETO en base64
         setSession(callback)
         window.location.href = this.redirectValue
         return
       }
 
+      // Respuesta sin access_token o error HTTP → toast GetError
       toastError(getError(callback || { Message: "Error de autenticación" }))
     } catch (err) {
       toastError(getError(err))
     } finally {
       hideLoading()
-      this.submitButtonTarget.disabled = false
+    }
+  }
+
+  // ==========================================================
+  // VISTA 2: ENVIAR CORREO DE RECUPERACIÓN
+  // ==========================================================
+
+  validateRecoverEmailForm() {
+    const email = this.userEmailTarget.value
+    // Legacy: required + Validators.email → botón disabled si inválido
+    this.sendRecoverEmailButtonTarget.disabled = !email || !isValidEmail(email)
+  }
+
+  async sendRecoverEmail(event) {
+    event.preventDefault()
+    const email = this.userEmailTarget.value
+
+    showLoading(OVERLAY_MESSAGES.sendRecoverEmail)
+
+    try {
+      // Legacy: GET api/Users/RecoverPassword/#EMAIL# (sin Authorization)
+      const response = await fetch(ENDPOINTS.sendRecoverPasswordEmail(email))
+      const body = decodeResponseMessage(await response.json().catch(() => null))
+
+      hideLoading()
+
+      if (response.ok) {
+        // Legacy: ShowAlert({Response}) + GoToLogin()
+        await showAlert({ type: "success", message: body?.Message || "Correo enviado" })
+        this.goToLogin()
+      } else {
+        await showAlert({ type: "error", message: getError(body) })
+      }
+    } catch (err) {
+      hideLoading()
+      await showAlert({ type: "error", message: getError(err) })
+    }
+  }
+
+  // ==========================================================
+  // VISTA 3: CAMBIAR CONTRASEÑA
+  // ==========================================================
+
+  validateChangePasswordForm() {
+    const email = this.cpUserEmailTarget.value
+    const current = this.currentPasswordTarget.value
+    const newPass = this.newPasswordTarget.value
+    const confirm = this.confirmPasswordTarget.value
+
+    // Legacy: NotEquals(confirmPassword, newPassword) marca notEqual
+    const notEqual = !!confirm && newPass !== confirm
+    this.cpNotEqualErrorTarget.hidden = !notEqual
+
+    // Legacy: required en todos + email válido + min 8 (policy) + iguales
+    const valid =
+      !!email && isValidEmail(email) &&
+      !!current &&
+      !!newPass && newPass.length >= MIN_PASSWORD_LENGTH &&
+      !!confirm && !notEqual
+
+    this.changePasswordButtonTarget.disabled = !valid
+  }
+
+  async changePassword(event) {
+    event.preventDefault()
+
+    showLoading(OVERLAY_MESSAGES.changePassword)
+
+    try {
+      // Legacy: PATCH api/Users/ChangePassword {oldPassword, newPassword, email}
+      const response = await fetch(ENDPOINTS.changePassword, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          oldPassword: this.currentPasswordTarget.value,
+          newPassword: this.newPasswordTarget.value,
+          email: this.cpUserEmailTarget.value
+        })
+      })
+      const body = decodeResponseMessage(await response.json().catch(() => null))
+
+      hideLoading()
+
+      if (response.ok) {
+        await showAlert({ type: "success", message: body?.Message || "Contraseña actualizada" })
+        this.goToLogin()
+      } else {
+        await showAlert({ type: "error", message: getError(body) })
+      }
+    } catch (err) {
+      hideLoading()
+      await showAlert({ type: "error", message: getError(err) })
+    }
+  }
+
+  // ==========================================================
+  // VISTA 4: RECUPERAR CONTRASEÑA (token temporal del email)
+  // ==========================================================
+
+  validateRecoverPasswordForm() {
+    const newPass = this.rpNewPasswordTarget.value
+    const confirm = this.rpConfirmPasswordTarget.value
+
+    const notEqual = !!confirm && newPass !== confirm
+    this.rpNotEqualErrorTarget.hidden = !notEqual
+
+    const valid = !!newPass && newPass.length >= MIN_PASSWORD_LENGTH && !!confirm && !notEqual
+    this.recoverPasswordButtonTarget.disabled = !valid
+  }
+
+  async recoverPassword(event) {
+    event.preventDefault()
+
+    showLoading(OVERLAY_MESSAGES.recoverPassword)
+
+    try {
+      // Legacy: PATCH api/Users/ChangeRecoverPassword {password}
+      // con Authorization: Bearer {token temporal del query param}
+      const response = await fetch(ENDPOINTS.recoverPassword, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${this.recoveryTokenValue}`
+        },
+        body: JSON.stringify({ password: this.rpNewPasswordTarget.value })
+      })
+      const body = decodeResponseMessage(await response.json().catch(() => null))
+
+      hideLoading()
+
+      if (response.ok) {
+        await showAlert({ type: "success", message: body?.Message || "Contraseña actualizada" })
+        this.goToLogin()
+      } else {
+        await showAlert({ type: "error", message: getError(body) })
+      }
+    } catch (err) {
+      hideLoading()
+      await showAlert({ type: "error", message: getError(err) })
     }
   }
 }

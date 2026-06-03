@@ -21,6 +21,10 @@ export const ALERT_TYPES = {
 // ALERTS SERVICE
 // ============================================================
 
+// PMS global toast configuration (app.component SetTokenConfiguration ALERTS):
+// duration 10000ms, verticalPosition top, horizontalPosition center
+const PMS_TOAST_DURATION = 10000
+
 class AlertsService {
   constructor() {
     this.containerSelector = '#toast-container'
@@ -36,7 +40,8 @@ class AlertsService {
     if (!container) {
       container = document.createElement('div')
       container.id = 'toast-container'
-      container.className = 'fixed top-4 right-4 z-[9999] flex flex-col space-y-2'
+      // PMS: toasts at top center (legacy verticalPosition: 'top', horizontalPosition: 'center')
+      container.className = 'fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex flex-col space-y-2'
       document.body.appendChild(container)
     }
 
@@ -49,7 +54,7 @@ class AlertsService {
    * @param {string} type - Alert type
    * @param {number} duration - Duration in ms
    */
-  showToast(message, type = ALERT_TYPES.INFO, duration = 5000) {
+  showToast(message, type = ALERT_TYPES.INFO, duration = PMS_TOAST_DURATION) {
     const container = this.getContainer()
 
     const colors = {
