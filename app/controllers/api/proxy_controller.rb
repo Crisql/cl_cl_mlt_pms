@@ -116,15 +116,15 @@ module Api
 
     def build_http_request(method, uri, headers)
       request_class = case method.upcase
-                      when "GET" then Net::HTTP::Get
-                      when "POST" then Net::HTTP::Post
-                      when "PUT" then Net::HTTP::Put
-                      when "PATCH" then Net::HTTP::Patch
-                      when "DELETE" then Net::HTTP::Delete
-                      when "OPTIONS" then Net::HTTP::Options
-                      when "HEAD" then Net::HTTP::Head
-                      else Net::HTTP::Get
-                      end
+      when "GET" then Net::HTTP::Get
+      when "POST" then Net::HTTP::Post
+      when "PUT" then Net::HTTP::Put
+      when "PATCH" then Net::HTTP::Patch
+      when "DELETE" then Net::HTTP::Delete
+      when "OPTIONS" then Net::HTTP::Options
+      when "HEAD" then Net::HTTP::Head
+      else Net::HTTP::Get
+      end
 
       req = request_class.new(uri.request_uri)
       headers.each { |key, value| req[key] = value }
