@@ -88,8 +88,9 @@ test.describe('Shell - Sidebar (cl-menu)', () => {
     await expect(nav.getByText('Invisible')).toHaveCount(0);
     await expect(nav.getByText('Oculto')).toHaveCount(0);
 
-    // Íconos material
-    await expect(nav.locator('.material-icons', { hasText: 'home' })).toBeVisible();
+    // Íconos material (Material Symbols: superset que incluye los nombres
+    // nuevos del API como article_shortcut)
+    await expect(nav.locator('.material-symbols-outlined', { hasText: 'home' })).toBeVisible();
   });
 
   test('Acordeón: expande hijos al click y nodo activo resaltado', async ({ page }) => {

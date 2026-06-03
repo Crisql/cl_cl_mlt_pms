@@ -12,8 +12,10 @@
 
     <link rel="icon" href="/icon.png" type="image/png">
 
-    <%# Material Icons (los Icon del menú legacy son nombres de Material Icons) %>
+    <%# Material Icons (clásica) + Material Symbols (superset: incluye nombres
+        nuevos como article_shortcut que el API usa en el menú) %>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
 
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>

@@ -106,14 +106,20 @@ export default class extends Controller {
       }`
       item.dataset.menuKey = node.Key
 
+      // Slot de ícono de ancho FIJO (siempre presente) para que todos los
+      // items alineen igual. Se usa Material SYMBOLS (superset de la fuente
+      // clásica) porque el API trae nombres nuevos como article_shortcut.
+      // Si el dato trae espacios/mayúsculas se normaliza al primer token y
+      // el overflow queda oculto (nunca texto crudo desbordado).
       const icon = document.createElement("span")
-      icon.className = "material-icons text-base"
-      icon.textContent = node.Icon || ""
+      icon.className = "material-symbols-outlined text-base w-5 flex-shrink-0 overflow-hidden text-center"
+      const iconName = (node.Icon || "").trim().split(/\s+/)[0].toLowerCase()
+      icon.textContent = iconName
       item.appendChild(icon)
 
       const label = document.createElement("span")
       label.className = "flex-1"
-      label.textContent = node.Description
+      label.textContent = (node.Description || "").trim()
       item.appendChild(label)
 
       if (hasChildren) {
