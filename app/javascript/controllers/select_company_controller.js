@@ -56,6 +56,8 @@ export default class extends Controller {
   async closeThisModal(canceledAction) {
     if (this.selectedCompany) {
       await this.getMenu()
+      // Legacy: globalService.company.next(...) → ChartsComponent re-fetch
+      window.dispatchEvent(new CustomEvent("pms:company-changed"))
     }
     this.hide()
   }

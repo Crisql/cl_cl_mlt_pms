@@ -15,7 +15,10 @@
     </div>
   </div>
 
-  <%# TODO(migrate Dashboard): aquí va <app-charts> del legacy %>
+  <%# Dashboard de charts (legacy <app-charts>) %>
+  <div data-controller="charts" class="mt-6">
+    <div data-charts-target="grid" class="flex flex-wrap justify-center"></div>
+  </div>
 </div>
 
 <%# Modal SelectCompany (legacy: dialog.open desde Home.OpenDialog) %>
