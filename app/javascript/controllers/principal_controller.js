@@ -88,6 +88,21 @@ export default class extends Controller {
     const list = this.buildMenuList(nodes, 0)
     this.menuContainerTarget.appendChild(list)
     this.expandActiveParents(nodes)
+    this.sanitizeMenuIcons()
+  }
+
+  /**
+   * El API puede traer nombres de ícono inválidos (ej. 'widgetse', typo en la
+   * BD). Cuando la ligadura de la fuente NO resuelve, el span muestra el texto
+   * crudo (mucho más ancho que un glifo). Tras cargar las fuentes, cualquier
+   * ícono más ancho que un glifo se vacía: queda el slot alineado, sin basura.
+   */
+  sanitizeMenuIcons() {
+    document.fonts.ready.then(() => {
+      this.menuContainerTarget.querySelectorAll(".material-symbols-outlined").forEach((el) => {
+        if (el.scrollWidth > 28) el.textContent = ""
+      })
+    })
   }
 
   buildMenuList(nodes, level) {
