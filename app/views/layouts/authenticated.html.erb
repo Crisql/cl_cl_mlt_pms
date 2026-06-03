@@ -1,0 +1,120 @@
+<%# Shell autenticado — réplica de PagesComponent + cl-menu + HeaderComponent %>
+<%# Análisis: docs/migration/comparisons/SHELL-COMPLETE-ANALYSIS.md %>
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "PMS - Consolidador de Pagos" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= yield :head %>
+
+    <link rel="icon" href="/icon.png" type="image/png">
+
+    <%# Material Icons (los Icon del menú legacy son nombres de Material Icons) %>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="bg-gray-100"
+        data-controller="principal"
+        data-principal-env-name-value="<%= ENV.fetch('APP_ENV_NAME', 'Producción ambiente clavisco') %>">
+
+    <div class="flex h-screen overflow-hidden">
+      <%# Sidebar (cl-menu) %>
+      <aside data-principal-target="sidebar"
+             class="fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transform transition-transform duration-300 lg:relative lg:translate-x-0 flex flex-col">
+
+        <%# Header del sidebar: logo compañía + título de ambiente + usuario %>
+        <div class="flex flex-col items-center p-4 border-b border-gray-200">
+          <img data-principal-target="companyLogo"
+               src="<%= asset_path('clavis-white.png') %>"
+               class="max-h-16 object-contain mb-2 bg-gray-700 rounded p-1" alt="Logo" />
+          <div class="text-center">
+            <div class="text-xs text-gray-500" data-principal-target="envTitle"></div>
+          </div>
+        </div>
+
+        <%# Árbol del menú (KeyMenu) %>
+        <nav class="flex-1 overflow-y-auto p-2" data-principal-target="menuContainer">
+          <div class="text-center text-gray-400 text-sm py-4">Cargando menú...</div>
+        </nav>
+      </aside>
+
+      <%# Overlay del sidebar en móvil %>
+      <div data-principal-target="sidebarOverlay"
+           class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden lg:hidden"
+           data-action="click->principal#toggleMenu"></div>
+
+      <%# Contenido principal %>
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <%# Toolbar (PagesComponent toolbar + app-header) %>
+        <header class="bg-white shadow-sm border-b border-gray-200 z-20">
+          <div class="flex items-center justify-between px-4 py-2 flex-wrap gap-2">
+            <div class="flex items-center space-x-3">
+              <button type="button"
+                      class="p-2 rounded-md text-blue-600 hover:bg-gray-100"
+                      data-action="click->principal#toggleMenu"
+                      title="Menú">
+                <span class="material-icons">menu</span>
+              </button>
+              <h3 class="text-lg font-semibold text-gray-800"><%= content_for(:page_title) || "" %></h3>
+            </div>
+
+            <%# app-header: Compañía | Tipo de cambio | Usuario | Proceso %>
+            <div class="flex items-center gap-2 flex-wrap text-sm">
+              <button type="button"
+                      data-action="click->principal#selectCompany"
+                      class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded shadow-sm">
+                Compañía: <span data-principal-target="companyName"></span>
+              </button>
+
+              <button type="button" hidden
+                      data-principal-target="exchangeRateButton"
+                      data-action="click->principal#refreshExchangeRate"
+                      title="Refrescar"
+                      class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded shadow-sm">
+                Tipo de cambio Venta: <span data-principal-target="exchangeRate">0</span>
+              </button>
+
+              <button type="button"
+                      data-action="click->principal#selectUser"
+                      class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded shadow-sm flex items-center gap-2">
+                <img data-principal-target="userAvatar"
+                     src="<%= asset_path('user.png') %>"
+                     class="w-6 h-6 rounded-full object-cover" alt="Foto perfil" />
+                Usuario: <span data-principal-target="userEmail"></span>
+              </button>
+
+              <div class="relative">
+                <button type="button"
+                        data-action="click->principal#toggleProcessMenu"
+                        class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded shadow-sm">
+                  Proceso: <span data-principal-target="processName"></span> ▾
+                </button>
+                <div data-principal-target="processMenu" hidden
+                     class="absolute right-0 mt-1 w-32 bg-white border rounded shadow-lg z-50">
+                  <button type="button" data-action="click->principal#selectProcessTXT"
+                          class="block w-full text-left px-4 py-2 hover:bg-gray-100">TXT</button>
+                  <button type="button" data-action="click->principal#selectProcessHTH"
+                          class="block w-full text-left px-4 py-2 hover:bg-gray-100">HTH</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <%# Contenido de la página %>
+        <main class="flex-1 overflow-y-auto bg-gray-50">
+          <%= yield %>
+        </main>
+      </div>
+    </div>
+
+    <%# Modal SelectCompany (global: el header puede abrirlo desde cualquier página) %>
+    <%= render "home/select_company_modal" %>
+  </body>
+</html>

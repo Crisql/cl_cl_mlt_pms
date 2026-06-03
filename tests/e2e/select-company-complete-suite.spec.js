@@ -305,21 +305,18 @@ test.describe('SelectCompany - Selección exitosa (contrato API y storage)', () 
     const row = modal(page).locator('tbody tr', { hasText: 'Clavisco CR' });
     await row.locator('[data-role="select-company-row"]').click();
 
-    // La navegación a /Home puede destruir el contexto durante el poll
+    // La navegación a /Home puede destruir el contexto: leer y decodificar
+    // TODO dentro del poll (con reintentos ante context destroyed)
     await expect.poll(async () => {
       try {
-        return await page.evaluate(() => localStorage.getItem('KeyMenu'))
+        const raw = await page.evaluate(() => localStorage.getItem('KeyMenu'));
+        if (!raw) return null;
+        const keyMenu = JSON.parse(Buffer.from(raw, 'base64').toString('latin1'));
+        return keyMenu.map((m) => m.Key).sort().join(',');
       } catch {
-        return null
+        return null;
       }
-    }, { timeout: 10000 }).not.toBeNull();
-
-    const keyMenu = JSON.parse(Buffer.from(await page.evaluate(() => localStorage.getItem('KeyMenu')), 'base64').toString('latin1'));
-    const keys = keyMenu.map((m) => m.Key);
-    expect(keys).toContain('home');
-    expect(keys).toContain('settings');
-    expect(keys).toContain('logout');
-    expect(keys).not.toContain('lots');
+    }, { timeout: 15000 }).toBe('home,logout,settings'); // sin 'lots' (restringido)
   });
 });
 
