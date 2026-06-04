@@ -2,9 +2,9 @@
 <%# Análisis: docs/migration/comparisons/CHARTS-CONFIG-COMPLETE-ANALYSIS.md %>
 <% content_for(:page_title) { "Tablero principal" } %>
 
-<div class="p-6 space-y-6" data-controller="charts-config">
+<div class="p-6 flex flex-col gap-6 h-full" data-controller="charts-config">
   <%# Card: Buscar o agregar %>
-  <section class="bg-white rounded-lg shadow p-4">
+  <section class="bg-white rounded-lg shadow p-4 shrink-0">
     <p class="text-sm text-gray-500 mb-3">Buscar o agregar</p>
 
     <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -32,11 +32,11 @@
     </div>
   </section>
 
-  <%# Card: Resultados de búsqueda %>
-  <section class="bg-white rounded-lg shadow p-4">
-    <p class="text-sm text-gray-500 mb-3">Resultados de búsqueda</p>
+  <%# Card: Resultados de búsqueda — crece para llenar el alto disponible %>
+  <section class="bg-white rounded-lg shadow p-4 flex-1 flex flex-col min-h-0">
+    <p class="text-sm text-gray-500 mb-3 shrink-0">Resultados de búsqueda</p>
 
-    <div class="overflow-x-auto">
+    <div class="overflow-auto flex-1 min-h-0">
       <table class="min-w-full text-sm">
         <thead>
           <tr class="text-left text-gray-600 border-b">
@@ -56,7 +56,7 @@
     </div>
 
     <%# Paginación local %>
-    <div class="flex items-center justify-end gap-3 mt-4 text-sm text-gray-600">
+    <div class="flex items-center justify-end gap-3 mt-4 text-sm text-gray-600 shrink-0">
       <label class="flex items-center gap-2">
         Filas:
         <select data-charts-config-target="pageSize"
