@@ -1,0 +1,146 @@
+<%# Formulario de gráfico — réplica de ModalChartConfigComponent (legacy modal → ruta) %>
+<%# Análisis: docs/migration/comparisons/CHARTS-CONFIG-COMPLETE-ANALYSIS.md %>
+<% content_for(:page_title) { "Tablero principal" } %>
+
+<div class="p-6"
+     data-controller="chart-config-form"
+     data-chart-config-form-chart-id-value="<%= @chart_id %>">
+
+  <div class="bg-white rounded-lg shadow max-w-3xl mx-auto">
+    <%# Encabezado %>
+    <div class="flex items-center justify-between px-6 py-4 border-b">
+      <h2 class="text-lg font-semibold text-gray-800" data-chart-config-form-target="title">Datos del gráfico</h2>
+      <a href="<%= dashboard_path %>" title="Cerrar" class="p-2 rounded text-blue-600 hover:bg-gray-100">
+        <span class="material-icons">close</span>
+      </a>
+    </div>
+
+    <%# Pestañas %>
+    <div class="border-b px-6">
+      <nav class="flex gap-4">
+        <button type="button" data-chart-config-form-target="tabGraphBtn"
+                data-action="click->chart-config-form#showGraphTab"
+                class="py-3 border-b-2 text-sm font-medium border-blue-600 text-blue-600">Gráficos</button>
+        <button type="button" data-chart-config-form-target="tabLabelsBtn"
+                data-action="click->chart-config-form#showLabelsTab"
+                class="py-3 border-b-2 text-sm font-medium border-transparent text-gray-500">Labels</button>
+      </nav>
+    </div>
+
+    <div class="px-6 py-5">
+      <%# ===================== TAB GRÁFICOS ===================== %>
+      <div data-chart-config-form-target="graphTab" class="space-y-4">
+        <div>
+          <label class="block text-sm text-gray-600 mb-1">Titulo</label>
+          <input type="text" data-chart-config-form-target="fTitle"
+                 data-action="input->chart-config-form#validate"
+                 placeholder="Título"
+                 class="w-full border border-gray-300 rounded px-3 py-2 text-sm" />
+          <p data-chart-config-form-target="errTitle" hidden class="text-xs text-red-600 mt-1">El titulo es requerido</p>
+        </div>
+
+        <div>
+          <label class="block text-sm text-gray-600 mb-1">Tipo</label>
+          <select data-chart-config-form-target="fType"
+                  data-action="change->chart-config-form#validate"
+                  class="w-full border border-gray-300 rounded px-3 py-2 text-sm bg-white">
+            <option value=""></option>
+          </select>
+          <p data-chart-config-form-target="errType" hidden class="text-xs text-red-600 mt-1">El tipo es requerido</p>
+        </div>
+
+        <div>
+          <label class="block text-sm text-gray-600 mb-1">Opciones</label>
+          <input type="text" data-chart-config-form-target="fOptions" list="chart-options-list"
+                 data-action="input->chart-config-form#validate"
+                 placeholder="Options"
+                 class="w-full border border-gray-300 rounded px-3 py-2 text-sm" />
+          <datalist id="chart-options-list" data-chart-config-form-target="optionsList"></datalist>
+        </div>
+
+        <div>
+          <label class="block text-sm text-gray-600 mb-1">XType</label>
+          <select data-chart-config-form-target="fXType"
+                  data-action="change->chart-config-form#validate"
+                  class="w-full border border-gray-300 rounded px-3 py-2 text-sm bg-white">
+            <option value=""></option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm text-gray-600 mb-1">YType</label>
+          <select data-chart-config-form-target="fYType"
+                  data-action="change->chart-config-form#validate"
+                  class="w-full border border-gray-300 rounded px-3 py-2 text-sm bg-white">
+            <option value=""></option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm text-gray-600 mb-1">Vista de datasets</label>
+          <input type="text" data-chart-config-form-target="fXAxisDatasets"
+                 data-action="input->chart-config-form#validate"
+                 placeholder="Vista de datasets"
+                 class="w-full border border-gray-300 rounded px-3 py-2 text-sm" />
+        </div>
+
+        <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+          <input type="checkbox" data-chart-config-form-target="fIsActive" checked
+                 class="rounded border-gray-300 text-blue-600" />
+          Activo
+        </label>
+      </div>
+
+      <%# ===================== TAB LABELS ===================== %>
+      <div data-chart-config-form-target="labelsTab" hidden class="space-y-4">
+        <div>
+          <label class="block text-sm text-gray-600 mb-1">Nombre del label principal</label>
+          <input type="text" data-chart-config-form-target="fXAxis"
+                 data-action="input->chart-config-form#validate"
+                 placeholder="Nombre del label principal"
+                 class="w-full border border-gray-300 rounded px-3 py-2 text-sm" />
+        </div>
+
+        <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+          <input type="checkbox" data-chart-config-form-target="fHaveDynamicLabels"
+                 data-action="change->chart-config-form#askToChangeDynamicLabels" />
+          Labels dinámicos
+        </label>
+
+        <%# --- Modo manual: filas de color --- %>
+        <div data-chart-config-form-target="manualBlock" class="space-y-3">
+          <button type="button" data-action="click->chart-config-form#addColor"
+                  class="inline-flex items-center gap-1 px-3 py-1.5 border border-blue-600 text-blue-600 rounded text-sm hover:bg-blue-50">
+            <span class="material-icons text-base">add</span>Agregar Color
+          </button>
+          <div data-chart-config-form-target="colorsContainer" class="space-y-2"></div>
+        </div>
+
+        <%# --- Modo dinámico: rango de colores --- %>
+        <div data-chart-config-form-target="dynamicBlock" hidden>
+          <label class="block text-sm text-gray-600 mb-1">Rango de colores dinámicos</label>
+          <select data-chart-config-form-target="fChartColorRange"
+                  data-action="change->chart-config-form#validate"
+                  class="w-full border border-gray-300 rounded px-3 py-2 text-sm bg-white">
+            <option value="">Rango de colores</option>
+          </select>
+          <div data-chart-config-form-target="rangePreview" class="mt-2"></div>
+        </div>
+      </div>
+    </div>
+
+    <%# Footer %>
+    <div class="flex items-center justify-end gap-3 px-6 py-4 border-t">
+      <a href="<%= dashboard_path %>"
+         class="inline-flex items-center gap-1 px-4 py-2 border border-blue-600 text-blue-600 rounded text-sm hover:bg-blue-50">
+        <span class="material-icons text-base">close</span>Cancelar
+      </a>
+      <button type="button" data-chart-config-form-target="saveButton"
+              data-action="click->chart-config-form#onSave"
+              title=""
+              class="inline-flex items-center gap-1 px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed">
+        <span class="material-icons text-base">save</span>Guardar
+      </button>
+    </div>
+  </div>
+</div>

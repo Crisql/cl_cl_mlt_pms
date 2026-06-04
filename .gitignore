@@ -29,7 +29,11 @@
 !/tmp/storage/
 !/tmp/storage/.keep
 
-/public/assets
+# Se ignora el CONTENIDO de public/assets (output compilado), no el directorio,
+# para poder versionar public/assets/data (datos fuente estáticos: enums de la UI
+# que el legacy leía de src/assets/data/*.json). Son fuente, NO output compilado.
+/public/assets/*
+!/public/assets/data
 
 # Ignore key files for decrypting credentials and more.
 /config/*.key

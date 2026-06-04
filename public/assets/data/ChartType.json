@@ -1,0 +1,14 @@
+[
+  {
+    "id": "bar",
+    "name": "Bar"
+  },
+  {
+    "id": "pie",
+    "name": "Pie"
+  },
+  {
+    "id": "line",
+    "name": "Line"
+  }
+]
