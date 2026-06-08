@@ -1,0 +1,79 @@
+<%# Dashboard — administración de gráficos del tablero (legacy ChartsConfigComponent) %>
+<%# Análisis: docs/migration/comparisons/CHARTS-CONFIG-COMPLETE-ANALYSIS.md %>
+<% content_for(:page_title) { "Tablero principal" } %>
+
+<div class="p-6 flex flex-col gap-6 h-full" data-controller="charts-config">
+  <%# Card: Buscar o agregar %>
+  <section class="bg-white rounded-lg shadow p-4 shrink-0">
+    <p class="text-sm text-gray-500 mb-3">Buscar o agregar</p>
+
+    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div class="flex items-center gap-2 w-full md:w-1/2">
+        <input type="text"
+               data-charts-config-target="searchInput"
+               data-action="input->charts-config#onSearchInput"
+               placeholder="Buscar gráfico"
+               aria-label="Criterio de búsqueda"
+               class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <button type="button"
+                data-action="click->charts-config#onSearchClick"
+                title="Buscar gráfico"
+                class="p-2 rounded text-blue-600 hover:bg-gray-100">
+          <span class="material-icons">search</span>
+        </button>
+      </div>
+
+      <%# Botón Nuevo → ruta de creación (en vez del modal) %>
+      <a href="<%= new_chart_config_path %>"
+         data-charts-config-target="newButton"
+         class="inline-flex items-center justify-center gap-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm">
+        <span class="material-icons text-base">add</span>Nuevo
+      </a>
+    </div>
+  </section>
+
+  <%# Card: Resultados de búsqueda — crece para llenar el alto disponible %>
+  <section class="bg-white rounded-lg shadow p-4 flex-1 flex flex-col min-h-0">
+    <p class="text-sm text-gray-500 mb-3 shrink-0">Resultados de búsqueda</p>
+
+    <div class="overflow-auto flex-1 min-h-0">
+      <table class="min-w-full text-sm">
+        <thead>
+          <tr class="text-left text-gray-600 border-b">
+            <th class="px-4 py-2 font-medium">Titulo</th>
+            <th class="px-4 py-2 font-medium">Tipo</th>
+            <th class="px-4 py-2 font-medium">Vista de base de datos</th>
+            <th class="px-4 py-2 font-medium">Activo</th>
+            <th class="px-4 py-2 font-medium text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody data-charts-config-target="tableBody"></tbody>
+      </table>
+
+      <%# Estado vacío %>
+      <div data-charts-config-target="emptyState" hidden
+           class="text-center text-gray-400 py-8">Sin resultados</div>
+    </div>
+
+    <%# Paginación local %>
+    <div class="flex items-center justify-end gap-3 mt-4 text-sm text-gray-600 shrink-0">
+      <label class="flex items-center gap-2">
+        Filas:
+        <select data-charts-config-target="pageSize"
+                data-action="change->charts-config#onPageSizeChange"
+                class="border border-gray-300 rounded px-2 py-1">
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+        </select>
+      </label>
+      <span data-charts-config-target="pageInfo">0 de 0</span>
+      <button type="button" data-charts-config-target="prevPage"
+              data-action="click->charts-config#previousPage"
+              class="px-2 py-1 rounded hover:bg-gray-100 disabled:opacity-40">‹</button>
+      <button type="button" data-charts-config-target="nextPage"
+              data-action="click->charts-config#nextPage"
+              class="px-2 py-1 rounded hover:bg-gray-100 disabled:opacity-40">›</button>
+    </div>
+  </section>
+</div>

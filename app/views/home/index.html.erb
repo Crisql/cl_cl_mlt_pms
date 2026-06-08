@@ -1,0 +1,22 @@
+<%# Home — réplica de /Home (HomeComponent) %>
+<%# Funcionalidad legacy: valida sesión (sin CurrentSession → /Login); si no hay %>
+<%# compañía seleccionada abre SelectCompany como modal (PENDIENTE: migrate SelectCompany). %>
+<%# El dashboard de charts (app-charts) se migrará con su propio módulo (migrate Dashboard). %>
+<div class="p-6" data-controller="home"
+     data-home-force-select-company-value="<%= request.path == '/SelectCompany' %>">
+  <div class="bg-blue-600 text-white rounded-lg shadow p-6 flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-semibold">Bienvenido</h1>
+      <p class="mt-1" data-home-target="currentDate"></p>
+      <p class="mt-1">v.<%= ENV.fetch("APP_VERSION", "4.0.0") %></p>
+    </div>
+    <div>
+      <%= image_tag "home-white.png", alt: "Home", class: "max-h-20 object-contain" %>
+    </div>
+  </div>
+
+  <%# Dashboard de charts (legacy <app-charts>) %>
+  <div data-controller="charts" class="mt-6">
+    <div data-charts-target="grid" class="flex flex-wrap justify-center"></div>
+  </div>
+</div>

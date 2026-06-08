@@ -1,0 +1,188 @@
+<%# Login — réplica funcional de /Login (LoginContainerComponent + cl-login CORE) %>
+<%# Análisis completo: docs/migration/comparisons/LOGIN-COMPLETE-ANALYSIS.md %>
+<%# 4 vistas conmutadas: login | recover-email | change-password | recover-password %>
+<div class="min-h-screen flex items-center justify-center bg-gray-100"
+     data-controller="login"
+     data-login-redirect-value="<%= params[:redirectURL].presence || '/Home' %>"
+     data-login-recovery-token-value="<%= params[:token].to_s %>"
+     data-login-recaptcha-site-key-value="<%= ENV.fetch('RECAPTCHA_SITE_KEY', '') %>">
+
+  <div class="w-full max-w-md bg-white rounded-lg shadow-md p-8">
+    <div class="flex justify-center mb-6">
+      <%= image_tag "companiesLogo/#{ENV.fetch('LOGIN_LOGO', 'claviscoLogin.png')}",
+                    alt: "Logo", class: "max-h-24 object-contain" %>
+    </div>
+
+    <%# ################### LOGIN ################ %>
+    <form data-login-target="loginView" data-action="submit->login#login" novalidate>
+      <div class="mb-4">
+        <label for="loginUser" class="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
+        <input type="text" id="loginUser" placeholder="Correo electrónico" autocomplete="username" required
+               data-login-target="loginUser"
+               class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+
+      <div class="mb-6">
+        <label for="loginPass" class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+        <div class="relative">
+          <input type="password" id="loginPass" name="password" autocomplete="current-password" required
+                 data-login-target="loginPass"
+                 class="w-full border border-gray-300 rounded px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <button type="button" data-login-target="loginPassToggle"
+                  data-action="click->login#toggleLoginPassword"
+                  class="absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-700"
+                  aria-label="Mostrar contraseña">👁</button>
+        </div>
+      </div>
+
+      <button type="submit"
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded">
+        Ingresar
+      </button>
+
+      <div class="flex items-center justify-evenly text-sm mt-4">
+        <a href="#" data-action="click->login#goToRecoverEmail" class="text-blue-600 hover:underline">¿Olvidó su contraseña?</a>
+        <span>|</span>
+        <a href="#" data-action="click->login#goToChangePassword" class="text-blue-600 hover:underline">Cambiar contraseña</a>
+      </div>
+
+      <div class="text-center text-xs text-gray-500 mt-6">
+        <p>© <%= Time.current.year %> Clavis Consultores</p>
+      </div>
+    </form>
+
+    <%# ################### SEND RECOVER PASSWORD EMAIL ################ %>
+    <form data-login-target="recoverEmailView" data-action="submit->login#sendRecoverEmail" novalidate hidden>
+      <div class="mb-6">
+        <label for="userEmail" class="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
+        <input type="text" id="userEmail" placeholder="Correo electrónico" required
+               data-login-target="userEmail"
+               data-action="input->login#validateRecoverEmailForm"
+               class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+
+      <button type="submit" disabled
+              data-login-target="sendRecoverEmailButton"
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed">
+        Enviar correo de recuperación
+      </button>
+
+      <div class="flex items-center justify-center text-sm mt-4">
+        <a href="#" data-action="click->login#goToLogin" class="text-blue-600 hover:underline">Iniciar de sesión</a>
+      </div>
+
+      <div class="text-center text-xs text-gray-500 mt-6">
+        <p>© <%= Time.current.year %> Clavis Consultores</p>
+      </div>
+    </form>
+
+    <%# ################### CHANGE PASSWORD ################ %>
+    <form data-login-target="changePasswordView" data-action="submit->login#changePassword" novalidate hidden>
+      <div class="mb-4">
+        <label for="cp-user-email" class="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
+        <input type="text" id="cp-user-email" placeholder="Correo electrónico" required
+               data-login-target="cpUserEmail"
+               data-action="input->login#validateChangePasswordForm"
+               class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+
+      <div class="mb-4">
+        <label for="currentPassword" class="block text-sm font-medium text-gray-700 mb-1">Contraseña actual</label>
+        <div class="relative">
+          <input type="password" id="currentPassword" required
+                 data-login-target="currentPassword"
+                 data-action="input->login#validateChangePasswordForm"
+                 class="w-full border border-gray-300 rounded px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <button type="button" data-action="click->login#togglePasswordField"
+                  class="absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-700"
+                  aria-label="Mostrar contraseña">👁</button>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label for="newPassword" class="block text-sm font-medium text-gray-700 mb-1">Nueva contraseña</label>
+        <div class="relative">
+          <input type="password" id="newPassword" required
+                 data-login-target="newPassword"
+                 data-action="input->login#validateChangePasswordForm"
+                 class="w-full border border-gray-300 rounded px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <button type="button" data-action="click->login#togglePasswordField"
+                  class="absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-700"
+                  aria-label="Mostrar contraseña">👁</button>
+        </div>
+      </div>
+
+      <div class="mb-2">
+        <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
+        <div class="relative">
+          <input type="password" id="confirmPassword" required
+                 data-login-target="confirmPassword"
+                 data-action="input->login#validateChangePasswordForm"
+                 class="w-full border border-gray-300 rounded px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <button type="button" data-action="click->login#togglePasswordField"
+                  class="absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-700"
+                  aria-label="Mostrar contraseña">👁</button>
+        </div>
+        <p class="text-red-600 text-xs mt-1" data-login-target="cpNotEqualError" hidden>Las contraseñas no coinciden</p>
+      </div>
+
+      <button type="submit" disabled
+              data-login-target="changePasswordButton"
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded mt-4 disabled:opacity-50 disabled:cursor-not-allowed">
+        Cambiar contraseña
+      </button>
+
+      <div class="flex items-center justify-evenly text-sm mt-4">
+        <a href="#" data-action="click->login#goToLogin" class="text-blue-600 hover:underline">Iniciar sesión</a>
+      </div>
+
+      <div class="text-center text-xs text-gray-500 mt-6">
+        <p>© <%= Time.current.year %> Clavis Consultores</p>
+      </div>
+    </form>
+
+    <%# ################### RECOVER PASSWORD (desde email con ?token=) ################ %>
+    <form data-login-target="recoverPasswordView" data-action="submit->login#recoverPassword" novalidate hidden>
+      <div class="mb-4">
+        <label for="rp-newPassword" class="block text-sm font-medium text-gray-700 mb-1">Nueva contraseña</label>
+        <div class="relative">
+          <input type="password" id="rp-newPassword" required
+                 data-login-target="rpNewPassword"
+                 data-action="input->login#validateRecoverPasswordForm"
+                 class="w-full border border-gray-300 rounded px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <button type="button" data-action="click->login#togglePasswordField"
+                  class="absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-700"
+                  aria-label="Mostrar contraseña">👁</button>
+        </div>
+      </div>
+
+      <div class="mb-2">
+        <label for="rp-confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
+        <div class="relative">
+          <input type="password" id="rp-confirmPassword" required
+                 data-login-target="rpConfirmPassword"
+                 data-action="input->login#validateRecoverPasswordForm"
+                 class="w-full border border-gray-300 rounded px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <button type="button" data-action="click->login#togglePasswordField"
+                  class="absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-700"
+                  aria-label="Mostrar contraseña">👁</button>
+        </div>
+        <p class="text-red-600 text-xs mt-1" data-login-target="rpNotEqualError" hidden>Las contraseñas no coinciden</p>
+      </div>
+
+      <button type="submit" disabled
+              data-login-target="recoverPasswordButton"
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded mt-4 disabled:opacity-50 disabled:cursor-not-allowed">
+        Cambiar contraseña
+      </button>
+
+      <div class="flex items-center justify-evenly text-sm mt-4">
+        <a href="#" data-action="click->login#goToLogin" class="text-blue-600 hover:underline">Iniciar sesión</a>
+      </div>
+
+      <div class="text-center text-xs text-gray-500 mt-6">
+        <p>© <%= Time.current.year %> Clavis Consultores</p>
+      </div>
+    </form>
+  </div>
+</div>

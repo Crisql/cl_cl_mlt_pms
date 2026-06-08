@@ -1,0 +1,22 @@
+{
+  "name": "cl_cl_mlt_pms",
+  "version": "1.0.0",
+  "description": "Migration of the PMS (Consolidador de Pagos) user interface from Angular to Rails 8 with Hotwire and Tailwind CSS.",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:report": "playwright show-report",
+    "test:ui": "playwright test --ui",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:all": "npm run test:unit && npm run test"
+  },
+  "devDependencies": {
+    "@hotwired/stimulus": "^3.2.2",
+    "@playwright/test": "^1.57.0",
+    "happy-dom": "^20.0.11",
+    "vitest": "^4.0.16"
+  }
+}
